@@ -1,0 +1,7 @@
+1 --title Harry Potter --fn John --ln Doe --price 20 --isbn 1234567890
+2 --title Harry Potter --price 25
+3 --fn John --ln Doe
+4 --fn John --ln Doe --desc My name is John Doe.
+5 --title Harry Potter --quantity 5
+6 --saleid 2355
+7
