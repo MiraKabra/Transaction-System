@@ -1,6 +1,7 @@
 import core
 import click
 import re
+import time
 import numpy as np
 # Prompts for user arguments for a given transaction one by one
 
@@ -57,8 +58,9 @@ def util(index, transaction_argument_map, isFirstHop):
 @click.option("--price", prompt="Enter the book price", type=int)
 @click.option("--isbn", prompt="Enter the book's ISBN", type=str)
 def t1(title, fn, ln, price, isbn):
-    first_hop_param = [1, title, fn, ln, price, isbn]
-    second_hop_param = [2, title, fn, ln, price, isbn]
+    ts = time.time()
+    first_hop_param = [1, ts, title, fn, ln, price, isbn]
+    second_hop_param = [2, ts, title, fn, ln, price, isbn]
     
     latency = two_hop_operation(1, first_hop_param, second_hop_param)
     return latency
@@ -68,8 +70,9 @@ def t1(title, fn, ln, price, isbn):
 @click.option("--title", prompt="Enter the book title", type=str)
 @click.option("--price", prompt="Enter the book price", type=int)
 def t2(title, price):
-    first_hop_param = [1, title, price]
-    second_hop_param = [2, title, price]
+    ts = time.time()
+    first_hop_param = [1, ts, title, price]
+    second_hop_param = [2, ts, title, price]
     latency = two_hop_operation(2, first_hop_param, second_hop_param)
     return latency
 
@@ -78,7 +81,8 @@ def t2(title, price):
 @click.option("--fn", prompt="Enter the author's first name", type=str)
 @click.option("--ln", prompt="Enter the author's last name", type=str)
 def t3(fn, ln):
-    first_hop_param = [1, fn, ln]
+    ts = time.time()
+    first_hop_param = [1, ts, fn, ln]
     latency = one_hop_operation(3, first_hop_param)
     return latency
 
@@ -88,7 +92,8 @@ def t3(fn, ln):
 @click.option("--ln", prompt="Enter the author's last name", type=str)
 @click.option("--desc", prompt="Enter the author description", type=str)
 def t4(fn, ln, desc):
-    first_hop_param = [1, fn, ln, desc]
+    ts = time.time()
+    first_hop_param = [1, ts, fn, ln, desc]
     latency = one_hop_operation(4, first_hop_param)
     return latency
 
@@ -97,8 +102,9 @@ def t4(fn, ln, desc):
 @click.option("--title", prompt="Enter the book title", type=str)
 @click.option("--quantity", prompt="Enter the quantity of books purchased", type=int)
 def t5(title, quantity):
-    first_hop_param = [1, title, quantity]
-    second_hop_param = [2, title, quantity]
+    ts = time.time()
+    first_hop_param = [1, ts, title, quantity]
+    second_hop_param = [2, ts, title, quantity]
     latency = two_hop_operation(5, first_hop_param, second_hop_param)
     return latency
 
@@ -106,8 +112,9 @@ def t5(title, quantity):
 @click.command()
 @click.option("--saleid", prompt="Enter the sale record ID", type=str)
 def t6(saleid):
-    first_hop_param = [1, saleid]
-    second_hop_param = [2, saleid]
+    ts = time.time()
+    first_hop_param = [1, ts, saleid]
+    second_hop_param = [2, ts,  saleid]
     latency = two_hop_operation(6, first_hop_param, second_hop_param)
     return latency
 
