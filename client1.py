@@ -3,6 +3,7 @@ import click
 import re
 import time
 import numpy as np
+import sys
 # Prompts for user arguments for a given transaction one by one
 
 NUM_USERS = len(core.user_map.keys())
@@ -21,7 +22,7 @@ def two_hop_operation(transaction_num, first_hop_param, second_hop_param):
     print(latency)
     if inputMethod == 1:
         latency_file.write(str(latency) + "\n")
-        latency_file.flush()  
+        latency_file.flush()
     return latency
 
 def one_hop_operation(transaction_num, first_hop_param):
@@ -31,7 +32,7 @@ def one_hop_operation(transaction_num, first_hop_param):
     latency = util(first_hop_index, first_hop_tr_argument_map, True)
     print(latency)
     if inputMethod == 1:
-        latency_file.write(str(latency) + "\n") 
+        latency_file.write(str(latency) + "\n")
         latency_file.flush()
     return first_hop_param, latency
 
@@ -61,7 +62,7 @@ def t1(title, fn, ln, price, isbn):
     ts = time.time()
     first_hop_param = [1, ts, title, fn, ln, price, isbn]
     second_hop_param = [2, ts, title, fn, ln, price, isbn]
-    
+
     latency = two_hop_operation(1, first_hop_param, second_hop_param)
     return latency
 
@@ -143,7 +144,7 @@ def getUserInput(inputMethod=0, path=None):
             options[mode](standalone_mode = False)
             return mode
     elif inputMethod==1:
-        file = open(path, 'r')        
+        file = open(path, 'r')
         while True:
             # read file line by line
             line = file.readline()
@@ -169,6 +170,8 @@ def getUserInput(inputMethod=0, path=None):
 
 
 if __name__ == '__main__':
+    path = sys.argv[1]
+    print(path)
     client_8080 = core.client(8080)
     print(client_8080)
     client_8085 = core.client(8085)
@@ -176,12 +179,11 @@ if __name__ == '__main__':
     client_8090 = core.client(8090)
     print(client_8090)
     while True:
-        path = 'input.txt'
         inputMethod = 1
         latency_file = open("latency.txt", "a")
         # Alternatively, uncomment below to let user choose input Method in CLI
         # inputMethod = int(input())
-        
+
         print("here")
         mode = getUserInput(inputMethod, path)
         latency_file.close()
