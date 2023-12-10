@@ -1,0 +1,7 @@
+1 --title Harry Potter --fn FirstName1 --ln LastName1 --price 20 --isbn 1234567890
+2 --title Harry Potter --price 25
+3 --fn FirstName1 --ln LastName1
+4 --fn FirstName1 --ln LastName1 --desc Updating description for FirstName1 LastName1. Testing servers.
+5 --title Harry Potter --quantity 5
+6 --saleid 221
+7
