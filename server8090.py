@@ -297,8 +297,6 @@ def startTxn6_FH(value_string, cursor, connection):
 #     print("Running Second Hop Query for Transaction 6")
 #     print("Sale Record Removed")
 
-def default_case(valueList, cursor, connection):
-    return  "Ran Default Case"
 
 
 def spin_new_server(cursor, connection, port=8090):

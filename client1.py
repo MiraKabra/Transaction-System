@@ -17,7 +17,8 @@ def two_hop_operation(transaction_num, first_hop_param, second_hop_param):
     first_hop_index = np.random.randint(0, NUM_USERS)
     second_hop_index = np.random.randint(0, NUM_USERS)
 
-    latency = util(first_hop_index, first_hop_tr_argument_map, True)
+    latency, returned_data = util(first_hop_index, first_hop_tr_argument_map, True)
+    second_hop_tr_argument_map[transaction_num].append(returned_data)
     util(second_hop_index, second_hop_tr_argument_map, False)
     print(latency)
     if inputMethod == 1:
@@ -170,7 +171,11 @@ def getUserInput(inputMethod=0, path=None):
 
 
 if __name__ == '__main__':
-    path = sys.argv[1]
+    inputMethod = 0
+    if inputMethod == 1:
+        path = sys.argv[1]
+    else:
+        path = ""
     print(path)
     client_8080 = core.client(8080)
     print(client_8080)
@@ -179,7 +184,7 @@ if __name__ == '__main__':
     client_8090 = core.client(8090)
     print(client_8090)
     while True:
-        inputMethod = 1
+
         latency_file = open("latency.txt", "a")
         # Alternatively, uncomment below to let user choose input Method in CLI
         # inputMethod = int(input())

@@ -300,8 +300,6 @@ def startTxn6_FH(value_string, cursor, connection):
 #     print("Sale Record Removed")
 
 
-def default_case(value_string, cursor):
-    return  "Ran Default Case"
 
 def spin_new_server(cursor, connection, port=8080):
     options = {1: [startTxn1_FH, startTxn1_SH], 2:[startTxn2_FH, startTxn2_SH], 3: [startTxn3_FH], 4: [startTxn4_FH], 5: [startTxn5_FH, startTxn5_SH], 6: [startTxn6_FH]}
@@ -335,7 +333,7 @@ def spin_new_server(cursor, connection, port=8080):
             print('From online user: ' + data)
             data = data.upper()
             print("server finished processing request")
-            client_socket.send(str({key:list(result[0])}).encode('utf-8'))
+            client_socket.send(str(list(result)).encode('utf-8'))
         client_socket.close()
 
 
