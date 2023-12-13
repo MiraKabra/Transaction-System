@@ -69,6 +69,7 @@ def startTxn1_FH(value_string, cursor, connection):
     # print("New Book Not Yet Added")
 
 def startTxn1_SH(value_string, cursor, connection):
+    start = time.time()
     value_list = ast.literal_eval(value_string)
     book_title = value_list[-4]
     book_price = value_list[-3]
@@ -82,7 +83,7 @@ def startTxn1_SH(value_string, cursor, connection):
     connection.commit()
     count = cursor.rowcount
     print(count, "record(s) inserted successfully into table")
-    return
+    return None
 
 #Code block for commutative property for txn 1:
 # # Check if the book already exists based on the title
@@ -144,7 +145,7 @@ def startTxn2_SH(value_string, cursor, connection):
     query = """UPDATE public."Books" SET price = %s WHERE book_id = %s"""
     cursor.execute(query, (book_price, book_id))
     print("Completed Second Hop Query: UPDATE Books")
-    return
+    return None
 
 # Code block for commutative property for txn 2:
 # # Fetch current price from the database for the given book_id
@@ -213,7 +214,7 @@ def startTxn4_FH(value_list, cursor, connection):
     count = cursor.rowcount
     print(count, "record updated successfully")
     print("Author's Information Updated")
-    return
+    return None
 
 # Code block for commutative property for txn 4:
 # # Fetch current timestamp and description from the database for the given author_id
@@ -277,7 +278,7 @@ def startTxn5_SH(value_string, cursor, connection):
     connection.commit()
     count = cursor.rowcount
     print(count, "record(s) inserted successfully into table")
-    return
+    return None
 
 
 def startTxn6_FH(value_string, cursor, connection):
@@ -293,7 +294,7 @@ def startTxn6_FH(value_string, cursor, connection):
     cursor.execute(query, sale_id)  # executing the query and adding parameters
     connection.commit()
     print("Completed First Hop Query: DELETE from Sales")
-    return
+    return None
 
 # def startTxn6_SH(value_string, cursor, connection):
 #     print("Running Second Hop Query for Transaction 6")

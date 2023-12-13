@@ -24,22 +24,30 @@ def two_hop_operation(transaction_num, first_hop_param, second_hop_param):
     if inputMethod == 1:
         latency_file.write(str(latency) + "\n")
         latency_file.flush()
+        data_file.write(str(None) + "\n") #We don't get data other than None for any two hop transactions
+        data_file.flush()
     return latency
 
 def one_hop_operation(transaction_num, first_hop_param):
     first_hop_tr_argument_map = {}
     first_hop_tr_argument_map[transaction_num] = first_hop_param
     first_hop_index = np.random.randint(0, NUM_USERS)
-    latency = util(first_hop_index, first_hop_tr_argument_map, True)
+    latency, returned_data = util(first_hop_index, first_hop_tr_argument_map, True, transaction_num)
     print(latency)
     if inputMethod == 1:
         latency_file.write(str(latency) + "\n")
         latency_file.flush()
+        data_file.write(str(returned_data) + "\n")  
+        data_file.flush()
     return first_hop_param, latency
 
-def util(index, transaction_argument_map, isFirstHop):
+def write_data_to_file(data):
+    return
+
+def util(index, transaction_argument_map, isFirstHop, transaction_num = 0):
     country = core.country_map[index]
     port = core.ports[country]
+    clients = [client_8080, client_8085, client_8090]
     if port == 8080:
         s = client_8080
     elif port == 8085:
@@ -47,10 +55,23 @@ def util(index, transaction_argument_map, isFirstHop):
     elif port == 8090:
         s = client_8090
     if isFirstHop:
-        t = core.sendWithRecv(s, str(transaction_argument_map))
-        return t
-    core.send(s, str(transaction_argument_map))
-    return None
+        if transaction_num == 4:
+            first_send = True
+            t = 0
+            for s in clients:
+                if first_send:
+                    t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
+                    first_send = False
+                else:    
+                    t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
+                return t, returned_data
+        else:    
+            t = core.sendWithRecv(s, str(transaction_argument_map))
+            return t, None
+    #Second hop update to all the servers
+    for s in clients:
+        core.send(s, str(transaction_argument_map))
+    return None, None
 
 # Transaction 1: Add a new book
 @click.command()
@@ -174,6 +195,7 @@ if __name__ == '__main__':
     inputMethod = 0
     if inputMethod == 1:
         path = sys.argv[1]
+        data_file = open("dataFile.txt", "a")
     else:
         path = ""
     print(path)
@@ -196,4 +218,5 @@ if __name__ == '__main__':
             client_8080.close()
             client_8085.close()
             client_8090.close()
+            data_file.close()
             break
