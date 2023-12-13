@@ -62,16 +62,16 @@ def startTxn1_FH(value_string, cursor, connection):
     cursor.execute(query, (author_fname, author_lname)) #executing the query and adding parameters
     rows = cursor.fetchall() # fetching all rows that return from the query
     for row in rows:
-        author_id = row
+        author_id = int(row[0])
         print("Author ID: {}".format(author_id)) # printing the author's id
     print("Completed First Hop Query: SELECT from Authors")
-    return author_id #returning the author id for the client to send back to the server that will complete the req
+    return [author_id] #returning the author id for the client to send back to the server that will complete the req
     # print("New Book Not Yet Added")
 
-def startTxn1_SH(value_string, cursor, connection):
+def startTxn1_SH(value_list, cursor, connection):
     start = time.time()
-    value_list = ast.literal_eval(value_string)
-    book_title = value_list[-4]
+    # value_list = ast.literal_eval(value_string)
+    book_title = value_list[-6]
     book_price = value_list[-3]
     book_isbn = value_list[-2]
     author_id = value_list[-1]
@@ -83,7 +83,7 @@ def startTxn1_SH(value_string, cursor, connection):
     connection.commit()
     count = cursor.rowcount
     print(count, "record(s) inserted successfully into table")
-    return None
+    return [0]
 
 #Code block for commutative property for txn 1:
 # # Check if the book already exists based on the title
@@ -110,7 +110,7 @@ def startTxn1_SH(value_string, cursor, connection):
 
 def startTxn2_FH(value_string, cursor, connection):
     print("Starting Transaction 2: Update Book Price")
-    # value_list = ast.literal_eval(value_string)  # Turns string into list
+    # value_list = list(value_string)  # Turns string into list
     # Each element from the list getting put in its own variable
     hop = value_string[0]
     currTS = value_string[1]
@@ -145,7 +145,7 @@ def startTxn2_SH(value_string, cursor, connection):
     query = """UPDATE public."Books" SET price = %s WHERE book_id = %s"""
     cursor.execute(query, (book_price, book_id))
     print("Completed Second Hop Query: UPDATE Books")
-    return None
+    return [0]
 
 # Code block for commutative property for txn 2:
 # # Fetch current price from the database for the given book_id
@@ -214,7 +214,7 @@ def startTxn4_FH(value_list, cursor, connection):
     count = cursor.rowcount
     print(count, "record updated successfully")
     print("Author's Information Updated")
-    return None
+    return [0]
 
 # Code block for commutative property for txn 4:
 # # Fetch current timestamp and description from the database for the given author_id
@@ -278,7 +278,7 @@ def startTxn5_SH(value_string, cursor, connection):
     connection.commit()
     count = cursor.rowcount
     print(count, "record(s) inserted successfully into table")
-    return None
+    return [0]
 
 
 def startTxn6_FH(value_string, cursor, connection):
@@ -294,7 +294,7 @@ def startTxn6_FH(value_string, cursor, connection):
     cursor.execute(query, sale_id)  # executing the query and adding parameters
     connection.commit()
     print("Completed First Hop Query: DELETE from Sales")
-    return None
+    return [0]
 
 # def startTxn6_SH(value_string, cursor, connection):
 #     print("Running Second Hop Query for Transaction 6")
@@ -324,9 +324,10 @@ def spin_new_server(cursor, connection, port=8080):
             data = data.strip('{}')
             key, value = data.split(':')
             # result = switch(int(key), value, cursor)
-            # print("Key:", key, type(key))
-            # print("Value", value, type(value))
+            print("Key:", key, type(key))
+            print("Value", value, type(value))
             valueList = ast.literal_eval(value)
+            print(valueList)
             result = options[int(key)][valueList[0] - 1](valueList, cursor, connection)
             data_dict = {key: value}
             print("result:", result)
@@ -334,7 +335,7 @@ def spin_new_server(cursor, connection, port=8080):
             print('From online user: ' + data)
             data = data.upper()
             print("server finished processing request")
-            client_socket.send(str(list(result)).encode('utf-8'))
+            client_socket.send(str(result[0]).encode('utf-8'))
         client_socket.close()
 
 

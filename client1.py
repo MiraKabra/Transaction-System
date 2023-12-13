@@ -66,8 +66,8 @@ def util(index, transaction_argument_map, isFirstHop, transaction_num = 0):
                     t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
                 return t, returned_data
         else:    
-            t = core.sendWithRecv(s, str(transaction_argument_map))
-            return t, None
+            t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
+            return t, returned_data
     #Second hop update to all the servers
     for s in clients:
         core.send(s, str(transaction_argument_map))
@@ -218,5 +218,6 @@ if __name__ == '__main__':
             client_8080.close()
             client_8085.close()
             client_8090.close()
-            data_file.close()
+            if inputMethod == 1:
+                data_file.close()
             break

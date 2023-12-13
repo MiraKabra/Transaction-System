@@ -5,17 +5,17 @@ user_map = {}
 country_map = {}
 
 
-user_map[0] = "Juian" 
+user_map[0] = "Juian"
 user_map[1] = "Katherine"
 user_map[2] = "Michael"
 user_map[3] = "Tiffany"
 user_map[4] = "Vincent"
-user_map[5] = "Kevin" 
+user_map[5] = "Kevin"
 
 user_map[6] = "Ria"
-user_map[7] = "Jesse" 
+user_map[7] = "Jesse"
 user_map[8] = "Amanda"
-user_map[9] = "Sarah" 
+user_map[9] = "Sarah"
 user_map[10] = "John"
 
 user_map[11] = "Nathan"
@@ -45,13 +45,13 @@ country_map[14] = "East Coast"
 ports = {"Europe": 8080, "West Coast": 8085, "East Coast": 8090}
 
 def client(port=8080):
-  host = socket.gethostname()  # get local machine name  
+  host = socket.gethostname()  # get local machine name
   s = socket.socket()
   print("before connection " + str(port))
-  s.connect((host, port))  
+  s.connect((host, port))
   print("after connection " + str(port))
   return s
-  
+
 def send(s, message):
     s.send(message.encode('utf-8'))
     print('Sent to server: ' + message)
