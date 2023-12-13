@@ -65,10 +65,10 @@ def sendWithRecv(s, message):
     end = time.time()
     print('Received from server: ' + data)
     print(time.time())
-    return end - start
+    return end - start, data
 
-def close_conn(s):
-    s.close()
+# def close_conn(s):
+#     s.close()
 
 if __name__ == '__main__':
   client()
