@@ -43,7 +43,6 @@ def server(cursor, connection):
 
 def startTxn1_FH(value_string, cursor, connection):
     print("Starting Transaction 1: Add New Book")
-    # value_list = ast.literal_eval(value_string) #Turns string into list
     #Each element from the list getting put in its own variable
     hop = value_string[0]
     currTS = value_string[1]
@@ -62,52 +61,40 @@ def startTxn1_FH(value_string, cursor, connection):
                 WHERE author_first_name = %s AND author_last_name = %s"""
     cursor.execute(query, (author_fname, author_lname)) #executing the query and adding parameters
     rows = cursor.fetchall() # fetching all rows that return from the query
-    # rows = cursor.fetchone()
     for row in rows:
         author_id = int(row[0])
         print("Author ID: {}".format(author_id)) # printing the author's id
     print("Completed First Hop Query: SELECT from Authors")
     return [author_id] #returning the author id for the client to send back to the server that will complete the req
-    # print("New Book Not Yet Added")
 
-def startTxn1_SH(value_string, cursor, connection):
-    # value_list = ast.literal_eval(value_string)
-    book_title = value_string[-6]
-    book_price = value_string[-3]
-    book_isbn = value_string[-2]
-    author_id = value_string[-1]
-    print("Running Txn 1 Second Hop Query: INSERT INTO Books")
-    query = """INSERT INTO public."Books" (title, price, isbn, author_id)
-                VALUES ( %s, %s, %s, %s)
-    """
-    cursor.execute(query, (book_title, book_price, book_isbn, author_id))
-    connection.commit()
-    count = cursor.rowcount
-    print(count, "record(s) inserted successfully into table")
+def startTxn1_SH(value_list, cursor, connection):
+    start = time.time()
+    bookExists = txn1CommProp(cursor, value_list[-6])
+    book_title = value_list[-6]
+    book_price = value_list[-3]
+    book_isbn = value_list[-2]
+    author_id = value_list[-1]
+    if not bookExists:
+        print("Running Txn 1 Second Hop Query: INSERT INTO Books")
+        query = """INSERT INTO public."Books" (title, price, isbn, author_id)
+                    VALUES ( %s, %s, %s, %s)
+        """
+        cursor.execute(query, (book_title, book_price, book_isbn, author_id))
+        connection.commit()
+        count = cursor.rowcount
+        print(count, "record(s) inserted successfully into table")
     return [0]
 
-#Code block for commutative property for txn 1:
-# # Check if the book already exists based on the title
-# select_query = """
-#     SELECT * FROM public."Books"
-#     WHERE title = %s
-# """
-# cursor.execute(select_query, (title,))
-# existing_book = cursor.fetchone()
 
-# if existing_book:
-#     print(f"Book '{title}' already exists. Not adding it again.")
-# else:
-#     # Add the book to the table if it doesn't exist
-#     insert_query = """
-#         INSERT INTO public."Books" (title, price, isbn, author_id)
-#         VALUES (%s, %s, %s, %s)
-#     """
-#     cursor.execute(insert_query, (title, price, isbn, author_id))
-#     print(f"Book '{title}' added to the table.")
-
-#     # Commit the transaction to make the changes permanent
-#     connection.commit()
+def txn1CommProp(cursor, title):
+    # Check if the book already exists based on the title
+    select_query = """
+                    SELECT * FROM public."Books"
+                    WHERE title = %s
+                """
+    cursor.execute(select_query, (title,))
+    existing_book = cursor.fetchone()
+    return existing_book
 
 def startTxn2_FH(value_string, cursor, connection):
     print("Starting Transaction 2: Update Book Price")
@@ -135,6 +122,7 @@ def startTxn2_FH(value_string, cursor, connection):
 
 
 def startTxn2_SH(value_list, cursor, connection):
+    ifEqual = txn2CommProp(cursor, value_list[-1], value_list[-2])
     # value_list = ast.literal_eval(value_string)
     # hop = value_list[0]
     # currTS = value_list[1]
@@ -143,34 +131,25 @@ def startTxn2_SH(value_list, cursor, connection):
     book_price = value_list[-2]
     print("Running Second Hop Query for Transaction 2")
     print("Running Txn 2 Second Hop Query: INSERT INTO Books")
-    query = """UPDATE public."Books" SET price = %s WHERE book_id = %s"""
-    cursor.execute(query, (book_price, book_id))
-    connection.commit()
-    print("Completed Second Hop Query: UPDATE Books")
+    if ifEqual:
+        query = """UPDATE public."Books" SET price = %s WHERE book_id = %s"""
+        cursor.execute(query, (book_price, book_id))
+        connection.commit()
+        print("Completed Second Hop Query: UPDATE Books")
     return [0]
 
-# Code block for commutative property for txn 2:
-# # Fetch current price from the database for the given book_id
-# select_query ="""
-#     SELECT price FROM public."Books"
-#     WHERE book_id = %s
-# """
-# cursor.execute(select_query, (book_id,))
-# current_price = cursor.fetchone()[0]
 
-# # Calculate the maximum of current and new prices
-# max_price = max(current_price, new_price)
-
-# # Update the price in the database with the maximum value
-# update_query ="""
-#     UPDATE public."Books"
-#     SET price = %s
-#     WHERE book_id = %s
-# """
-# cursor.execute(update_query, (max_price, book_id))
-
-# # Commit the transaction to make the changes permanent
-# connection.commit()
+def txn2CommProp(cursor, book_id, new_price):
+    # Fetch current price from the database for the given book_id
+    select_query = """
+                    SELECT price FROM public."Books"
+                    WHERE book_id = %s
+                    """
+    cursor.execute(select_query, (book_id,))
+    current_price = cursor.fetchone()[0]
+    # Calculate the maximum of current and new prices
+    max_price = max(current_price, new_price)
+    return max_price == new_price
 
 def startTxn3_FH(value_list, cursor, connection):
     print("Starting Transaction 3: Retrieve Author Information")
@@ -199,47 +178,44 @@ def startTxn3_FH(value_list, cursor, connection):
     print("Author's Information Printed")
     return rows
 
+
 def startTxn4_FH(value_list, cursor, connection):
     print("Starting Transaction 4: Update Author Description")
-    # value_list = ast.literal_eval(value_string)
+    new_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     hop = value_list[0]
     currTS = value_list[1]
+    laterTimestamp = txn4CommProp(cursor, value_list[-3], value_list[-2], currTS)
     author_firstname = value_list[-3]
     author_lastname = value_list[-2]
     description = value_list[-1]
-    new_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print("Running Query: SELECT * FROM Authors WHERE author_first_name = '{}' and author_last_name = '{}'".format(
-        author_firstname, author_lastname))
-    query = """UPDATE public."Authors" SET description = %s, timestamp = %s  WHERE author_first_name = %s and author_last_name = %s"""
-    cursor.execute(query, (description, new_timestamp, author_firstname, author_lastname))
-    connection.commit()
-    count = cursor.rowcount
-    print(count, "record updated successfully")
-    print("Author's Information Updated")
+
+    if laterTimestamp:
+        print("Running Query: SELECT * FROM Authors WHERE author_first_name = '{}' and author_last_name = '{}'".format(
+            author_firstname, author_lastname))
+        query = """UPDATE public."Authors" SET description = %s, timestamp = %s  WHERE author_first_name = %s and author_last_name = %s"""
+        cursor.execute(query, (description, new_timestamp, author_firstname, author_lastname))
+        connection.commit()
+        count = cursor.rowcount
+        print(count, "record updated successfully")
+        print("Author's Information Updated")
     return [0]
 
-# Code block for commutative property for txn 4:
-# # Fetch current timestamp and description from the database for the given author_id
-# select_query = """
-#     SELECT description, timestamp FROM public."Authors"
-#     WHERE author_id = %s
-# """
-# cursor.execute(select_query, (author_id,))
-# current_description, current_timestamp = cursor.fetchone()
 
-# # Calculate the maximum of current and new timestamps
-# max_timestamp = max(current_timestamp, new_timestamp)
+def txn4CommProp(cursor, first_name, last_name, timestamp):
+    # Fetch current timestamp and description from the database for the given author_id
+    select_query = """
+                    SELECT timestamp FROM public."Authors"
+                    WHERE author_first_name = %s AND author_last_name = %s
+                """
+    cursor.execute(select_query, (first_name, last_name))
+    current_timestamp = cursor.fetchone()[0]
+    # Calculate the maximum of current and new timestamps
+    print("Current Timestamp: ", current_timestamp, "Type: ", type(current_timestamp))
+    print("Timestamp: ", timestamp, "Type: ", type(timestamp))
+    # print(datetime.datetime(current_timestamp).strftime("%Y-%m-%d %H:%M:%S"))
+    # max_timestamp = max(datetime.datetime(current_timestamp).strftime("%Y-%m-%d %H:%M:%S"), timestamp)
+    return datetime.datetime.fromtimestamp(timestamp) > current_timestamp
 
-# # Update the description and timestamp in the database with the maximum value
-# update_query = """
-#     UPDATE public."Authors"
-#     SET description = %s, timestamp = %s
-#     WHERE author_id = %s
-# """
-# cursor.execute(update_query, (new_description, max_timestamp, author_id))
-
-# # Commit the transaction to make the changes permanent
-# connection.commit()
 
 def startTxn5_FH(value_string, cursor, connection):
     print("Starting Transaction 5: Record Sale")
@@ -266,7 +242,6 @@ def startTxn5_FH(value_string, cursor, connection):
 
 def startTxn5_SH(value_list, cursor, connection):
     print("Running Second Hop Query for Transaction 5")
-    # value_list = ast.literal_eval(value_string)
     hop = value_list[0]
     currTS = value_list[1]
     book_id = int(value_list[-1])

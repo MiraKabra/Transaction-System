@@ -201,7 +201,7 @@ def getUserInput(inputMethod=0, path=None):
 
 
 if __name__ == '__main__':
-    inputMethod = 1
+    inputMethod = 0
     if inputMethod == 1:
         path = sys.argv[1]
         data_file = open("dataFile.txt", "a")
