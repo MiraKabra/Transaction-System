@@ -1,4 +1,5 @@
 import ast
+import datetime
 import socket
 import time
 import threading
@@ -75,7 +76,7 @@ def startTxn1_SH(value_list, cursor, connection):
     book_price = value_list[-3]
     book_isbn = value_list[-2]
     author_id = value_list[-1]
-    print("Running Txn 2 Second Hop Query: INSERT INTO Books")
+    print("Running Txn 1 Second Hop Query: INSERT INTO Books")
     query = """INSERT INTO public."Books" (title, price, isbn, author_id)
                 VALUES ( %s, %s, %s, %s)
     """
@@ -118,32 +119,33 @@ def startTxn2_FH(value_string, cursor, connection):
     book_price = value_string[-1]
 
     #printing the query that will be run
-    print("Running Txn 1 First Hop Query: SELECT from Books")
+    print("Running Txn 2 First Hop Query: SELECT from Books")
 
     #writing the query and storing in variable
     query = """SELECT book_id 
                 FROM public."Books"   
                 WHERE title = %s"""
-    cursor.execute(query, book_title) #executing the query and adding parameters
+    cursor.execute(query, (book_title,)) #executing the query and adding parameters
     rows = cursor.fetchall() # fetching all rows that return from the query
     for row in rows:
-        book_id = row
+        book_id = int(row[0])
         print("Book ID: {}".format(book_id)) # printing the book's id
     print("Completed First Hop Query: SELECT from Books")
-    return book_id #returning the book id for the client to send back to the server that will complete the req
+    return [book_id] #returning the book id for the client to send back to the server that will complete the req
 
 
-def startTxn2_SH(value_string, cursor, connection):
-    value_list = ast.literal_eval(value_string)
+def startTxn2_SH(value_list, cursor, connection):
+    # value_list = ast.literal_eval(value_string)
     # hop = value_list[0]
     # currTS = value_list[1]
-    book_id = value_list[-3]
-    book_title = value_list[-2]
-    book_price = value_list[-1]
+    book_id = value_list[-1]
+    book_title = value_list[-3]
+    book_price = value_list[-2]
     print("Running Second Hop Query for Transaction 2")
     print("Running Txn 2 Second Hop Query: INSERT INTO Books")
     query = """UPDATE public."Books" SET price = %s WHERE book_id = %s"""
     cursor.execute(query, (book_price, book_id))
+    connection.commit()
     print("Completed Second Hop Query: UPDATE Books")
     return [0]
 
@@ -206,10 +208,11 @@ def startTxn4_FH(value_list, cursor, connection):
     author_firstname = value_list[-3]
     author_lastname = value_list[-2]
     description = value_list[-1]
+    new_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print("Running Query: SELECT * FROM Authors WHERE author_first_name = '{}' and author_last_name = '{}'".format(
         author_firstname, author_lastname))
-    query = """UPDATE public."Authors" SET description = %s WHERE author_first_name = %s and author_last_name = %s"""
-    cursor.execute(query, (description, author_firstname, author_lastname))
+    query = """UPDATE public."Authors" SET description = %s, timestamp = %s  WHERE author_first_name = %s and author_last_name = %s"""
+    cursor.execute(query, (description, new_timestamp, author_firstname, author_lastname))
     connection.commit()
     count = cursor.rowcount
     print(count, "record updated successfully")
@@ -249,32 +252,33 @@ def startTxn5_FH(value_string, cursor, connection):
     book_quantity = value_string[-1]
 
     # printing the query that will be run
-    print("Running Txn 1 First Hop Query: SELECT from Books")
+    print("Running Txn 5 First Hop Query: SELECT from Books")
     # writing the query and storing in variable
     query = """SELECT book_id 
                     FROM public."Books"   
                     WHERE title = %s"""
-    cursor.execute(query, book_title)  # executing the query and adding parameters
+    cursor.execute(query, (book_title,))  # executing the query and adding parameters
     rows = cursor.fetchall()  # fetching all rows that return from the query
     for row in rows:
-        book_id = row
+        book_id = int(row[0])
         print("Book ID: {}".format(book_id))  # printing the book's id
     print("Completed First Hop Query: SELECT from Books")
-    return book_id  # returning the book id for the client to send back to the server that will complete the req
+    return [book_id]  # returning the book id for the client to send back to the server that will complete the req
 
-def startTxn5_SH(value_string, cursor, connection):
+def startTxn5_SH(value_list, cursor, connection):
     print("Running Second Hop Query for Transaction 5")
-    value_list = ast.literal_eval(value_string)
+    # value_list = ast.literal_eval(value_string)
     hop = value_list[0]
     currTS = value_list[1]
-    book_id = value_list[2]
-    book_title = value_list[3]
-    book_quantity = value_list[4]
+    book_id = int(value_list[-1])
+    book_title = value_list[-3]
+    book_quantity = value_list[-2]
+    sale_timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
     print("Running Txn 2 Second Hop Query: INSERT INTO Books")
     query = """INSERT INTO public."Sales" (book_id, title, quantity_sold, sale_date)
-                    VALUES ( %s, %s, %s, date('now'))
+                    VALUES (%s, %s, %s, %s)
         """
-    cursor.execute(query, (book_id, book_title, book_quantity))
+    cursor.execute(query, (book_id, book_title, book_quantity, sale_timestamp))
     connection.commit()
     count = cursor.rowcount
     print(count, "record(s) inserted successfully into table")
@@ -291,7 +295,7 @@ def startTxn6_FH(value_string, cursor, connection):
 
     # writing the query and storing in variable
     query = """DELETE FROM public."Sales" WHERE sale_id = %s"""
-    cursor.execute(query, sale_id)  # executing the query and adding parameters
+    cursor.execute(query, (sale_id,))  # executing the query and adding parameters
     connection.commit()
     print("Completed First Hop Query: DELETE from Sales")
     return [0]
@@ -330,7 +334,8 @@ def spin_new_server(cursor, connection, port=8080):
             print(valueList)
             result = options[int(key)][valueList[0] - 1](valueList, cursor, connection)
             data_dict = {key: value}
-            print("result:", result)
+            print("result:", result[0])
+            print("result:", str(result[0]))
             print(time.time())
             print('From online user: ' + data)
             data = data.upper()

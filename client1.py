@@ -1,3 +1,5 @@
+import ast
+
 import core
 import click
 import re
@@ -17,9 +19,10 @@ def two_hop_operation(transaction_num, first_hop_param, second_hop_param):
     first_hop_index = np.random.randint(0, NUM_USERS)
     second_hop_index = np.random.randint(0, NUM_USERS)
 
-    latency, returned_data = util(first_hop_index, first_hop_tr_argument_map, True)
+    latency, returned_data = util(first_hop_index, first_hop_tr_argument_map, True, transaction_num)
+    print(transaction_num, returned_data)
     second_hop_tr_argument_map[transaction_num].append(returned_data)
-    util(second_hop_index, second_hop_tr_argument_map, False)
+    util(second_hop_index, second_hop_tr_argument_map, False, transaction_num)
     print(latency)
     if inputMethod == 1:
         latency_file.write(str(latency) + "\n")
@@ -37,7 +40,7 @@ def one_hop_operation(transaction_num, first_hop_param):
     if inputMethod == 1:
         latency_file.write(str(latency) + "\n")
         latency_file.flush()
-        data_file.write(str(returned_data) + "\n")  
+        data_file.write(str(returned_data) + "\n")
         data_file.flush()
     return first_hop_param, latency
 
@@ -54,8 +57,13 @@ def util(index, transaction_argument_map, isFirstHop, transaction_num = 0):
         s = client_8085
     elif port == 8090:
         s = client_8090
+    print("isFirstHop: " + str(isFirstHop))
     if isFirstHop:
-        if transaction_num == 4:
+        print("Txn #: ", transaction_num)
+        if transaction_num == 3:
+            t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
+            return t, returned_data
+        if transaction_num == 4 or transaction_num == 6:
             first_send = True
             t = 0
             for s in clients:
@@ -64,14 +72,15 @@ def util(index, transaction_argument_map, isFirstHop, transaction_num = 0):
                     first_send = False
                 else:    
                     t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
-                return t, returned_data
+            return t, returned_data
         else:    
             t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
+            print("Printed from Util: Txn #", transaction_num, "Returned Data:", returned_data)
             return t, returned_data
     #Second hop update to all the servers
     for s in clients:
-        core.send(s, str(transaction_argument_map))
-    return None, None
+        t, returned_data = core.sendWithRecv(s, str(transaction_argument_map))
+    return t, returned_data
 
 # Transaction 1: Add a new book
 @click.command()
@@ -137,8 +146,7 @@ def t5(title, quantity):
 def t6(saleid):
     ts = time.time()
     first_hop_param = [1, ts, saleid]
-    second_hop_param = [2, ts,  saleid]
-    latency = two_hop_operation(6, first_hop_param, second_hop_param)
+    latency = one_hop_operation(6, first_hop_param)
     return latency
 
 def getUserInput(inputMethod=0, path=None):
@@ -188,30 +196,31 @@ def getUserInput(inputMethod=0, path=None):
                 return mode
             inp = [i.strip() for i in inp]
             options[mode](inp, standalone_mode=False)
+            time.sleep(2)
         file.close()
 
 
 if __name__ == '__main__':
-    inputMethod = 0
+    inputMethod = 1
     if inputMethod == 1:
         path = sys.argv[1]
         data_file = open("dataFile.txt", "a")
     else:
         path = ""
-    print(path)
+    # print(path)
     client_8080 = core.client(8080)
-    print(client_8080)
+    # print(client_8080)
     client_8085 = core.client(8085)
-    print(client_8085)
+    # print(client_8085)
     client_8090 = core.client(8090)
-    print(client_8090)
+    # print(client_8090)
     while True:
 
         latency_file = open("latency.txt", "a")
         # Alternatively, uncomment below to let user choose input Method in CLI
         # inputMethod = int(input())
 
-        print("here")
+        print("line before getUserInput")
         mode = getUserInput(inputMethod, path)
         latency_file.close()
         if mode == 7:
