@@ -1,5 +1,3 @@
-import ast
-
 import core
 import click
 import re
@@ -85,10 +83,10 @@ def util(index, transaction_argument_map, isFirstHop, transaction_num = 0):
 
 # Transaction 1: Add a new book
 @click.command()
-@click.option("--title", prompt="Enter the book title", type=str)
+@click.option("--title", prompt="Enter the book's title", type=str)
 @click.option("--fn", prompt="Enter the author's first name", type=str)
 @click.option("--ln", prompt="Enter the author's last name", type=str)
-@click.option("--price", prompt="Enter the book price", type=int)
+@click.option("--price", prompt="Enter the book's price", type=int)
 @click.option("--isbn", prompt="Enter the book's ISBN", type=str)
 def t1(title, fn, ln, price, isbn):
     global total_latency
@@ -102,8 +100,8 @@ def t1(title, fn, ln, price, isbn):
 
 # Transaction 2: Update book price
 @click.command()
-@click.option("--title", prompt="Enter the book title", type=str)
-@click.option("--price", prompt="Enter the book price", type=int)
+@click.option("--title", prompt="Enter the book's title", type=str)
+@click.option("--price", prompt="Enter the book's price", type=int)
 def t2(title, price):
     global total_latency
     ts = time.time()
@@ -129,7 +127,7 @@ def t3(fn, ln):
 @click.command()
 @click.option("--fn", prompt="Enter the author's first name", type=str)
 @click.option("--ln", prompt="Enter the author's last name", type=str)
-@click.option("--desc", prompt="Enter the author description", type=str)
+@click.option("--desc", prompt="Enter the author's description", type=str)
 def t4(fn, ln, desc):
     global total_latency
     ts = time.time()
@@ -221,8 +219,10 @@ def getUserInput(inputMethod=0, path=None):
         file.close()
     if total_latency > 0:
         print("Total Duration:", endTime - startTime)
+        print("Latency: ", total_latency)
         print("Total # of Txns:", txnCount)
         print("Throughput:", (txnCount / float(total_latency)))
+        print("Average Latency:", (float(total_latency) / float(txnCount)))
     return mode
 
 
@@ -233,13 +233,9 @@ if __name__ == '__main__':
         data_file = open("dataFile.txt", "a")
     else:
         path = ""
-    # print(path)
     client_8080 = core.client(8080)
-    # print(client_8080)
     client_8085 = core.client(8085)
-    # print(client_8085)
     client_8090 = core.client(8090)
-    # print(client_8090)
     while True:
 
         latency_file = open("latency.txt", "a")
